@@ -1,0 +1,64 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: shad
+      POSTGRES_PASSWORD: shad
+      POSTGRES_DB: shad_clinic
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U shad -d shad_clinic"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      DATABASE_URL: postgresql://shad:shad@postgres:5432/shad_clinic?schema=public
+      JWT_SECRET: change-me-in-production
+      REDIS_URL: redis://redis:6379
+      SMS_PROVIDER: mock
+      SMS_API_KEY: ""
+      SMS_SENDER: ""
+      PAYMENT_PROVIDER: mock
+      ZARINPAL_MERCHANT_ID: ""
+      PAYMENT_CALLBACK_URL: ""
+    volumes:
+      - api_uploads:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    expose:
+      - "4000"
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "80:80"
+
+volumes:
+  postgres_data:
+  redis_data:
+  api_uploads:

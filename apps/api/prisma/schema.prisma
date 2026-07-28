@@ -1,0 +1,242 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  RECEPTION
+  DOCTOR
+  PATIENT
+}
+
+enum AppointmentStatus {
+  PENDING
+  APPROVED
+  ATTENDED
+  CANCELLED
+  REJECTED
+  ABSENT
+  CONSULTATION_REQUESTED
+}
+
+enum TicketStatus {
+  OPEN
+  CLOSED
+}
+
+enum OrderStatus {
+  DRAFT
+  PAID
+  CANCELLED
+}
+
+model User {
+  id           String   @id @default(cuid())
+  role         Role
+  phone        String   @unique
+  email        String?   @unique
+  passwordHash String?
+  fullName     String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  patient      Patient?
+  staffProfile  StaffProfile?
+  notifications Notification[]
+  ticketsSent   Ticket[] @relation("TicketsSent")
+  createdMedicalRecords MedicalRecord[] @relation("CreatedMedicalRecords")
+}
+
+model Patient {
+  id                  String   @id @default(cuid())
+  userId              String   @unique
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  nationalId          String?
+  insurance           String?
+  address             String?
+  notes               String?
+  wallet              Int      @default(0)
+  treatmentPlan       String   @default("")
+  treatmentPlanImages  String[]  @default([])
+  nextAppointmentDate DateTime?
+  isPlanActive        Boolean  @default(false)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  appointments       Appointment[]
+  medicalRecords     MedicalRecord[]
+  orders             Order[]
+  payments           Payment[] @relation("PatientPayments")
+  fileAssets         FileAsset[] @relation("PatientFiles")
+  notifications      Notification[]
+}
+
+model StaffProfile {
+  id             String   @id @default(cuid())
+  userId         String   @unique
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title          String
+  specialty      String?
+  service        String?
+  shift          String   @default("morning")
+  active         Boolean  @default(true)
+  rating         Int      @default(5)
+  imageUrl       String?
+  gallery        String[]  @default([])
+  // (#12) public doctor-profile bio text.
+  bio            String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  appointments   Appointment[]
+}
+
+model Appointment {
+  id           String             @id @default(cuid())
+  patientId    String
+  patient      Patient            @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  doctorId     String?
+  doctor       StaffProfile?      @relation(fields: [doctorId], references: [id], onDelete: SetNull)
+  service      String
+  date         String
+  time         String
+  scheduledAt  DateTime?
+  status       AppointmentStatus  @default(PENDING)
+  cancelReason String?
+  reviewed     Boolean            @default(false)
+  rating       Int?
+  reviewText   String?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  medicalRecords MedicalRecord[]
+  notifications  Notification[]
+  payments       Payment[]
+}
+
+model MedicalRecord {
+  id              String   @id @default(cuid())
+  patientId       String
+  patient         Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  appointmentId   String?
+  appointment     Appointment? @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+  title           String
+  note            String
+  images          String[]  @default([])
+  createdByUserId String
+  createdByUser   User     @relation("CreatedMedicalRecords", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  fileAssets      FileAsset[] @relation("MedicalRecordFiles")
+}
+
+model Ticket {
+  id           String      @id @default(cuid())
+  senderUserId String
+  sender       User        @relation("TicketsSent", fields: [senderUserId], references: [id], onDelete: Cascade)
+  receiverRole Role
+  subject      String
+  text         String
+  status       TicketStatus @default(OPEN)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  sku         String   @unique
+  name        String
+  category    String
+  description String
+  price       Int
+  stock       Int      @default(0)
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  orderItems  OrderItem[]
+}
+
+model Order {
+  id          String      @id @default(cuid())
+  patientId   String
+  patient     Patient     @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  status      OrderStatus @default(DRAFT)
+  total       Int         @default(0)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  items       OrderItem[]
+  payments    Payment[]
+}
+
+model OrderItem {
+  id         String   @id @default(cuid())
+  orderId    String
+  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId  String
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Restrict)
+  qty        Int
+  unitPrice  Int
+}
+
+model Payment {
+  id            String       @id @default(cuid())
+  orderId       String?
+  order         Order?       @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  // (#13) links a payment to a treatment/service appointment, so clinical
+  // services — not just pharmacy orders — can be invoiced.
+  appointmentId String?
+  appointment   Appointment? @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+  patientId     String
+  patient       Patient      @relation("PatientPayments", fields: [patientId], references: [id], onDelete: Cascade)
+  amount        Int
+  method        String
+  reference     String?
+  status        String       @default("PAID")
+  createdAt     DateTime     @default(now())
+}
+
+model Notification {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  patientId   String?
+  patient     Patient? @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  appointmentId String?
+  appointment  Appointment? @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+  title       String
+  body        String
+  channel     String   @default("sms")
+  readAt      DateTime?
+  createdAt   DateTime @default(now())
+}
+
+model FileAsset {
+  id          String   @id @default(cuid())
+  patientId   String?
+  patient     Patient? @relation("PatientFiles", fields: [patientId], references: [id], onDelete: Cascade)
+  medicalRecordId String?
+  medicalRecord MedicalRecord? @relation("MedicalRecordFiles", fields: [medicalRecordId], references: [id], onDelete: Cascade)
+  name        String
+  mimeType    String
+  size        Int
+  url         String
+  createdAt   DateTime @default(now())
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  actorRole  Role?
+  action     String
+  entity     String
+  entityId   String?
+  meta       String?
+  createdAt  DateTime @default(now())
+}

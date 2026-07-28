@@ -1,0 +1,489 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>کاتالوگ محصول | سامانه‌ی مدیریت کلینیک شاد</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --navy: #1e3a8a;
+    --navy-deep: #172554;
+    --blue: #3b82f6;
+    --blue-soft: #60a5fa;
+    --ink: #0f172a;
+    --muted: #64748b;
+    --line: #e2e8f0;
+    --bg: #f8fafc;
+    --good: #10b981;
+    --warn: #f59e0b;
+    --radius: 18px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: 'Vazirmatn', Tahoma, sans-serif;
+    color: var(--ink);
+    background: #e7eef7;
+    line-height: 1.85;
+    -webkit-font-smoothing: antialiased;
+  }
+  .page {
+    width: 210mm;
+    min-height: 297mm;
+    margin: 14px auto;
+    background: #fff;
+    padding: 22mm 18mm;
+    box-shadow: 0 18px 50px -20px rgba(15, 23, 42, 0.35);
+    position: relative;
+    overflow: hidden;
+  }
+  h1, h2, h3, h4 { line-height: 1.4; margin: 0; }
+  p { margin: 0 0 10px; }
+  .muted { color: var(--muted); }
+
+  /* Cover */
+  .cover { color: #fff; background: linear-gradient(150deg, #1e3a8a 0%, #0f172a 100%); display: flex; flex-direction: column; }
+  .cover::before {
+    content: ""; position: absolute; top: -20%; left: -10%; width: 70%; height: 80%;
+    background: radial-gradient(circle, rgba(96,165,250,.45), transparent 60%); filter: blur(70px);
+  }
+  .cover::after {
+    content: ""; position: absolute; bottom: -25%; right: -10%; width: 70%; height: 80%;
+    background: radial-gradient(circle, rgba(0,180,216,.35), transparent 60%); filter: blur(80px);
+  }
+  .cover-inner { position: relative; z-index: 1; margin: auto 0; }
+  .logo-mark {
+    width: 64px; height: 64px; border-radius: 18px; display: grid; place-items: center;
+    background: linear-gradient(135deg, var(--blue-soft), var(--navy)); font-size: 34px; margin-bottom: 26px;
+    box-shadow: 0 14px 30px -10px rgba(0,0,0,.5);
+  }
+  .cover h1 { font-size: 44px; font-weight: 900; letter-spacing: .3px; }
+  .cover .tag { color: #bfdbfe; font-size: 20px; font-weight: 700; margin-top: 8px; }
+  .cover .sub { color: #cbd5e1; font-size: 15px; max-width: 70%; margin-top: 18px; }
+  .cover .badges { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 30px; }
+  .cover .badges span {
+    border: 1px solid rgba(147,197,253,.5); background: rgba(2,6,23,.35); color: #bfdbfe;
+    padding: 7px 14px; border-radius: 999px; font-size: 12.5px; font-weight: 700;
+  }
+  .cover-foot { position: relative; z-index: 1; display: flex; justify-content: space-between; align-items: end; color: #94a3b8; font-size: 13px; border-top: 1px solid rgba(148,163,184,.25); padding-top: 16px; }
+
+  /* Section chrome */
+  .eyebrow { color: var(--blue); font-weight: 800; font-size: 13px; letter-spacing: .5px; }
+  .sec-title { font-size: 27px; font-weight: 900; color: var(--navy); margin: 4px 0 6px; }
+  .sec-lead { color: var(--muted); font-size: 15px; max-width: 92%; margin-bottom: 22px; }
+  .rule { height: 4px; width: 56px; background: linear-gradient(90deg, var(--blue), var(--navy)); border-radius: 99px; margin: 10px 0 18px; }
+
+  /* KPI */
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin: 18px 0 6px; }
+  .kpi { border: 1px solid var(--line); border-bottom: 3px solid rgba(30,58,138,.4); border-radius: var(--radius); padding: 16px; text-align: center; background: #fff; }
+  .kpi b { display: block; font-size: 28px; font-weight: 900; color: var(--navy); }
+  .kpi span { color: var(--muted); font-size: 12.5px; font-weight: 700; }
+
+  /* Feature cards */
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .card { border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; background: #fff; break-inside: avoid; }
+  .card .ic { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; font-size: 20px; color: #fff; background: linear-gradient(135deg, var(--blue-soft), var(--navy)); margin-bottom: 10px; }
+  .card h3 { font-size: 17px; font-weight: 800; color: var(--ink); }
+  .card ul { margin: 8px 0 0; padding-inline-start: 18px; }
+  .card li { font-size: 13.5px; color: #334155; margin-bottom: 4px; }
+
+  /* Pills */
+  .pill { display: inline-block; padding: 3px 11px; border-radius: 999px; font-size: 11.5px; font-weight: 800; white-space: nowrap; }
+  .p-ready { background: rgba(16,185,129,.12); color: #047857; border: 1px solid rgba(16,185,129,.3); }
+  .p-dev { background: rgba(245,158,11,.12); color: #b45309; border: 1px solid rgba(245,158,11,.3); }
+  .p-next { background: rgba(59,130,246,.12); color: var(--navy); border: 1px solid rgba(59,130,246,.3); }
+
+  /* Tables */
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; margin-top: 6px; }
+  th, td { padding: 11px 13px; text-align: right; border-bottom: 1px solid var(--line); vertical-align: top; }
+  thead th { background: linear-gradient(135deg, var(--navy), #0f172a); color: #fff; font-weight: 800; font-size: 13px; }
+  thead th:first-child { border-top-right-radius: 12px; }
+  thead th:last-child { border-top-left-radius: 12px; }
+  tbody tr:nth-child(even) { background: #f6f9ff; }
+  td b { color: var(--ink); }
+  .center { text-align: center; }
+  .tick { color: var(--good); font-weight: 900; }
+  .cross { color: #cbd5e1; font-weight: 900; }
+
+  /* Comparison */
+  .vs th.shad { background: linear-gradient(135deg, var(--blue), var(--navy)); }
+  .vs th.old { background: #475569; }
+
+  /* Timeline */
+  .timeline { position: relative; margin-top: 10px; padding-inline-start: 26px; }
+  .timeline::before { content: ""; position: absolute; top: 6px; bottom: 6px; right: 7px; width: 2px; background: linear-gradient(var(--blue), var(--navy)); }
+  .tl { position: relative; padding: 0 0 18px; break-inside: avoid; }
+  .tl::before { content: ""; position: absolute; right: -23px; top: 5px; width: 12px; height: 12px; border-radius: 50%; background: #fff; border: 3px solid var(--blue); }
+  .tl h4 { font-size: 16px; font-weight: 800; color: var(--navy); display: flex; align-items: center; gap: 8px; }
+  .tl p { font-size: 13.5px; color: #475569; margin: 4px 0 0; }
+
+  /* Plans */
+  .plans { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 8px; }
+  .plan { border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; background: #fff; }
+  .plan.featured { border-color: var(--blue); box-shadow: 0 12px 30px -16px rgba(30,58,138,.5); }
+  .plan .head { padding: 16px; text-align: center; font-weight: 900; font-size: 18px; color: #fff; background: linear-gradient(135deg, #64748b, #334155); }
+  .plan.featured .head { background: linear-gradient(135deg, var(--blue), var(--navy)); }
+  .plan .price { text-align: center; padding: 12px; color: var(--muted); font-weight: 800; font-size: 14px; border-bottom: 1px dashed var(--line); }
+  .plan ul { list-style: none; margin: 0; padding: 14px 16px; }
+  .plan li { font-size: 13px; padding: 5px 0; color: #334155; display: flex; gap: 7px; }
+  .plan li::before { content: "✓"; color: var(--good); font-weight: 900; }
+  .plan li.no { color: #94a3b8; }
+  .plan li.no::before { content: "—"; color: #cbd5e1; }
+
+  /* Advantages */
+  .adv { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .adv .a { border-right: 4px solid var(--blue); background: #f6f9ff; border-radius: 12px; padding: 14px 16px; break-inside: avoid; }
+  .adv .a h4 { font-size: 15.5px; color: var(--navy); font-weight: 800; }
+  .adv .a p { font-size: 13px; color: #475569; margin: 4px 0 0; }
+
+  /* Tech */
+  .stack { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+  .stack span { background: #eef4ff; border: 1px solid #d6e4ff; color: var(--navy); font-weight: 700; font-size: 12.5px; padding: 6px 12px; border-radius: 10px; }
+
+  .note { background: #eff6ff; border: 1px solid #dbeafe; border-radius: 12px; padding: 12px 14px; font-size: 13px; color: #1e3a8a; }
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; margin-bottom: 12px; }
+
+  @media print {
+    body { background: #fff; }
+    .page { box-shadow: none; margin: 0; width: auto; min-height: auto; page-break-after: always; }
+    @page { size: A4; margin: 0; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ COVER ============ -->
+<section class="page cover">
+  <div class="cover-inner">
+    <div class="logo-mark">🦷</div>
+    <h1>سامانه‌ی مدیریت کلینیک شاد</h1>
+    <div class="tag">پلتفرم یکپارچه‌ی نوبت‌دهی، پرونده و مدیریت کلینیک دندان‌پزشکی</div>
+    <p class="sub">از نوبت‌دهی آنلاین و پرونده‌ی الکترونیک تا گزارش مالی و یادآور پیامکی — همه در یک سامانه‌ی بومی، موبایل‌محور و امن، مستقر روی سرور داخل ایران.</p>
+    <div class="badges">
+      <span>۱۰۰٪ بومی ایران</span>
+      <span>موبایل‌محور</span>
+      <span>داده‌ی واقعی، نه دمو</span>
+      <span>امن و نقش‌محور</span>
+      <span>قابل توسعه</span>
+    </div>
+  </div>
+  <div class="cover-foot">
+    <div>کاتالوگ محصول — نسخه‌ی اول</div>
+    <div>سند معرفی برای کارفرما</div>
+  </div>
+</section>
+
+<!-- ============ EXECUTIVE SUMMARY ============ -->
+<section class="page">
+  <div class="eyebrow">خلاصه‌ی مدیریتی</div>
+  <h2 class="sec-title">یک سامانه، کل چرخه‌ی کلینیک</h2>
+  <div class="rule"></div>
+  <p class="muted sec-lead">
+    کلینیک شاد یک نرم‌افزار جامع است که فرایندهای پراکنده‌ی یک کلینیک دندان‌پزشکی — نوبت‌دهی، پذیرش، پرونده‌ی درمان،
+    ارتباط با بیمار، فروش و گزارش‌گیری — را در یک محیط واحد و یکپارچه می‌کند. هدف، حذف دفترچه و تماس‌های پرتکرار،
+    کاهش خطای انسانی، و ساختن تجربه‌ای حرفه‌ای و سریع برای بیمار و کادر درمان است.
+  </p>
+
+  <div class="kpis">
+    <div class="kpi"><b>۶</b><span>ماژول عملیاتی اصلی</span></div>
+    <div class="kpi"><b>۴</b><span>نقش کاربری مجزا</span></div>
+    <div class="kpi"><b>۱۷+</b><span>قابلیت آماده‌ی بهره‌برداری</span></div>
+    <div class="kpi"><b>۲۴/۷</b><span>دسترسی آنلاین بیمار</span></div>
+  </div>
+
+  <h3 style="margin:24px 0 6px;color:var(--navy);font-size:18px;">چه مشکلی را حل می‌کند؟</h3>
+  <div class="grid">
+    <div class="card">
+      <div class="ic">📵</div>
+      <h3>پایان شلوغی تلفن و دفترچه</h3>
+      <ul>
+        <li>بیمار خودش آنلاین و شبانه‌روزی نوبت می‌گیرد.</li>
+        <li>تداخل زمانی نوبت‌ها به‌صورت خودکار جلوگیری می‌شود.</li>
+        <li>یادآور پیامکی، غیبت و فراموشی را کم می‌کند.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="ic">🗂️</div>
+      <h3>پرونده‌ی منظم و قابل اتکا</h3>
+      <ul>
+        <li>تاریخچه‌ی درمان هر بیمار در یک‌جا و قابل جست‌وجو.</li>
+        <li>ثبت جلسه با تصویر و طرح درمان.</li>
+        <li>دسترسی کنترل‌شده بر اساس نقش کادر درمان.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="ic">📈</div>
+      <h3>دید مدیریتی لحظه‌ای</h3>
+      <ul>
+        <li>گزارش مالی و درآمد به تفکیک روش پرداخت.</li>
+        <li>شناسایی بیماران ویژه و پروفایل مراجعات.</li>
+        <li>داشبورد آمار زنده برای تصمیم‌گیری.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="ic">🛡️</div>
+      <h3>امن، بومی و پایدار</h3>
+      <ul>
+        <li>میزبانی روی سرور داخل ایران، بدون وابستگی خارجی.</li>
+        <li>کنترل دسترسی نقش‌محور و حفاظت از داده‌ی بیمار.</li>
+        <li>زیرساخت استاندارد و پوشش با تست‌های خودکار.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CURRENT FEATURES ============ -->
+<section class="page">
+  <div class="eyebrow">امکانات فعلی <span class="pill p-ready" style="margin-right:6px;">آماده‌ی بهره‌برداری</span></div>
+  <h2 class="sec-title">آنچه هم‌اکنون کار می‌کند</h2>
+  <div class="rule"></div>
+  <p class="muted sec-lead">شش حوزه‌ی عملیاتی که در نسخه‌ی فعلی به‌صورت کامل پیاده‌سازی و آزموده شده‌اند.</p>
+
+  <div class="grid">
+    <div class="card">
+      <div class="ic">📅</div>
+      <h3>نوبت‌دهی و ارتباط</h3>
+      <ul>
+        <li>رزرو آنلاین نوبت بر اساس پزشک و خدمت</li>
+        <li>جلوگیری خودکار از تداخل زمانی</li>
+        <li>چرخه‌ی وضعیت: در انتظار، تأیید، انجام‌شده، لغو، غیبت</li>
+        <li>یادآور خودکار نوبت + اعلان پیامکی</li>
+        <li>تیکتینگ و ارتباط مستقیم بیمار با کلینیک</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="ic">🩺</div>
+      <h3>پرونده و درمان</h3>
+      <ul>
+        <li>پرونده‌ی الکترونیک پزشکی برای هر بیمار</li>
+        <li>ثبت جلسه‌ی درمان با شرح و تاریخچه</li>
+        <li>آپلود و نگه‌داری امن تصاویر پزشکی</li>
+        <li>طرح درمان و وضعیت پیگیری</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="ic">👥</div>
+      <h3>بیمار و پنل اختصاصی</h3>
+      <ul>
+        <li>پورتال شخصی بیمار: کیف پول و آمار مراجعات</li>
+        <li>مدیریت نوبت‌ها با فیلتر وضعیت</li>
+        <li>مشاهده‌ی پرونده و جلسات درمان</li>
+        <li>ورود/ثبت‌نام مجزای بیمار</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="ic">👨‍⚕️</div>
+      <h3>پرسنل و مدیریت</h3>
+      <ul>
+        <li>نقش‌های مدیریت، پذیرش و پزشک</li>
+        <li>مدیریت پزشکان: امتیاز، شیفت، فعال/غیرفعال</li>
+        <li>بیماران ویژه (رتبه‌بندی بر اساس مراجعه)</li>
+        <li>داشبورد آمار عملیاتی زنده</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="ic">💳</div>
+      <h3>مالی و فروشگاه</h3>
+      <ul>
+        <li>گزارش مالی: درآمد کل و تفکیک روش پرداخت</li>
+        <li>فهرست آخرین تراکنش‌ها</li>
+        <li>داروخانه/فروشگاه: محصولات و سفارش</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="ic">🛡️</div>
+      <h3>زیرساخت، امنیت و تجربه</h3>
+      <ul>
+        <li>احراز هویت توکنی و کنترل دسترسی نقش‌محور</li>
+        <li>رابط موبایل‌محور، فارسی، تم روشن/تیره</li>
+        <li>استقرار بومی (Docker، پایگاه‌داده، حافظه‌ی سریع)</li>
+        <li>پایداری با تست‌های خودکار</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============ COMPARISON ============ -->
+<section class="page">
+  <div class="eyebrow">مقایسه</div>
+  <h2 class="sec-title">روش سنتی در برابر سامانه‌ی شاد</h2>
+  <div class="rule"></div>
+  <p class="muted sec-lead">چرا گذار از دفترچه و تماس تلفنی به یک سامانه‌ی یکپارچه، یک ارتقای جدی است.</p>
+
+  <table class="vs">
+    <thead>
+      <tr>
+        <th style="width:30%">معیار</th>
+        <th class="old" style="width:35%">روش سنتی (دفترچه/تلفن)</th>
+        <th class="shad" style="width:35%">سامانه‌ی کلینیک شاد</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td><b>گرفتن نوبت</b></td><td>فقط در ساعت کاری، با تماس تلفنی</td><td>آنلاین و شبانه‌روزی، در چند ثانیه</td></tr>
+      <tr><td><b>تداخل نوبت</b></td><td>وابسته به دقت اپراتور، خطاپذیر</td><td>جلوگیری خودکار از رزرو هم‌زمان</td></tr>
+      <tr><td><b>یادآوری به بیمار</b></td><td>دستی یا انجام‌نشده</td><td>یادآور خودکار پیامکی</td></tr>
+      <tr><td><b>پرونده‌ی بیمار</b></td><td>کاغذی، گم‌شدنی، غیرقابل جست‌وجو</td><td>الکترونیک، با تصویر و تاریخچه</td></tr>
+      <tr><td><b>گزارش مالی</b></td><td>محاسبه‌ی دستی، زمان‌بر</td><td>گزارش لحظه‌ای و دقیق</td></tr>
+      <tr><td><b>دسترسی کادر</b></td><td>بدون تفکیک سطح دسترسی</td><td>کنترل دقیق بر اساس نقش</td></tr>
+      <tr><td><b>تجربه‌ی بیمار</b></td><td>وابسته به حضور/تماس</td><td>پورتال شخصی روی موبایل</td></tr>
+      <tr><td><b>مقیاس‌پذیری</b></td><td>محدود به کاغذ و نیرو</td><td>قابل توسعه به چند شعبه</td></tr>
+    </tbody>
+  </table>
+
+  <div class="note" style="margin-top:18px">
+    نتیجه: کاهش بار کاری پذیرش، کم‌تر شدن غیبت‌ها و خطاها، شفافیت مالی، و تجربه‌ی حرفه‌ای‌تری که مستقیماً روی رضایت و وفاداری بیمار اثر می‌گذارد.
+  </div>
+</section>
+
+<!-- ============ FULL FEATURE MATRIX ============ -->
+<section class="page">
+  <div class="eyebrow">جدول جامع امکانات</div>
+  <h2 class="sec-title">وضعیت کامل قابلیت‌ها</h2>
+  <div class="rule"></div>
+  <div class="legend">
+    <span><span class="pill p-ready">آماده</span> پیاده‌سازی‌شده</span>
+    <span><span class="pill p-dev">در حال توسعه</span> فاز نزدیک</span>
+    <span><span class="pill p-next">فاز بعد</span> روی نقشه‌ی راه</span>
+  </div>
+
+  <table>
+    <thead>
+      <tr><th style="width:26%">قابلیت</th><th style="width:54%">توضیح</th><th style="width:20%" class="center">وضعیت</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><b>نوبت‌دهی آنلاین</b></td><td>رزرو بر اساس پزشک و خدمت با جلوگیری از تداخل</td><td class="center"><span class="pill p-ready">آماده</span></td></tr>
+      <tr><td><b>مدیریت وضعیت نوبت</b></td><td>تأیید، انجام، لغو، غیبت + دلیل لغو</td><td class="center"><span class="pill p-ready">آماده</span></td></tr>
+      <tr><td><b>پورتال بیمار</b></td><td>کیف پول، آمار مراجعات، مدیریت نوبت‌ها</td><td class="center"><span class="pill p-ready">آماده</span></td></tr>
+      <tr><td><b>پرونده‌ی الکترونیک</b></td><td>ثبت جلسه، تاریخچه، طرح درمان</td><td class="center"><span class="pill p-ready">آماده</span></td></tr>
+      <tr><td><b>آپلود تصاویر پزشکی</b></td><td>پیوست و نگه‌داری امن عکس جلسات</td><td class="center"><span class="pill p-ready">آماده</span></td></tr>
+      <tr><td><b>اعلان و یادآور پیامکی</b></td><td>اطلاع‌رسانی نوبت + یادآور خودکار (Kavenegar)</td><td class="center"><span class="pill p-ready">آماده</span></td></tr>
+      <tr><td><b>احراز هویت و نقش‌ها</b></td><td>ورود توکنی + کنترل دسترسی نقش‌محور</td><td class="center"><span class="pill p-ready">آماده</span></td></tr>
+      <tr><td><b>مدیریت پزشکان</b></td><td>امتیاز، شیفت کاری، فعال/غیرفعال</td><td class="center"><span class="pill p-ready">آماده</span></td></tr>
+      <tr><td><b>بیماران ویژه</b></td><td>رتبه‌بندی بر اساس تعداد مراجعه</td><td class="center"><span class="pill p-ready">آماده</span></td></tr>
+      <tr><td><b>گزارش مالی</b></td><td>درآمد، تفکیک روش پرداخت، تراکنش‌های اخیر</td><td class="center"><span class="pill p-ready">آماده</span></td></tr>
+      <tr><td><b>داروخانه/فروشگاه</b></td><td>محصولات، سفارش و موجودی پایه</td><td class="center"><span class="pill p-ready">آماده</span></td></tr>
+      <tr><td><b>تیکتینگ</b></td><td>ارتباط بیمار با کلینیک</td><td class="center"><span class="pill p-ready">آماده</span></td></tr>
+      <tr><td><b>پرداخت آنلاین + فاکتور</b></td><td>درگاه پرداخت ایرانی و صدور فاکتور</td><td class="center"><span class="pill p-dev">در حال توسعه</span></td></tr>
+      <tr><td><b>گزارش‌های تحلیلی</b></td><td>نمودار درآمد، روند مراجعه و عملکرد پزشک</td><td class="center"><span class="pill p-dev">در حال توسعه</span></td></tr>
+      <tr><td><b>دستیار هوشمند «شاد»</b></td><td>پاسخ‌گوی هوش مصنوعی به بیماران</td><td class="center"><span class="pill p-next">فاز بعد</span></td></tr>
+      <tr><td><b>نسخه‌ی اپ موبایل (PWA)</b></td><td>نصب روی گوشی و اعلان درون‌برنامه‌ای</td><td class="center"><span class="pill p-next">فاز بعد</span></td></tr>
+      <tr><td><b>باشگاه مشتریان/وفاداری</b></td><td>امتیاز، تخفیف و کمپین پیامکی هدفمند</td><td class="center"><span class="pill p-next">فاز بعد</span></td></tr>
+      <tr><td><b>بکاپ و بازیابی خودکار</b></td><td>پشتیبان‌گیری زمان‌بندی‌شده‌ی داده و فایل</td><td class="center"><span class="pill p-next">فاز بعد</span></td></tr>
+      <tr><td><b>لاگ ممیزی (Audit)</b></td><td>ردگیری کامل عملیات حساس</td><td class="center"><span class="pill p-next">فاز بعد</span></td></tr>
+      <tr><td><b>مدیریت چندشعبه‌ای</b></td><td>اداره‌ی چند شعبه از یک پنل</td><td class="center"><span class="pill p-next">فاز بعد</span></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============ ROADMAP ============ -->
+<section class="page">
+  <div class="eyebrow">نقشه‌ی راه</div>
+  <h2 class="sec-title">مسیر تکامل محصول</h2>
+  <div class="rule"></div>
+  <p class="muted sec-lead">توسعه‌ی مرحله‌ای و قابل‌برنامه‌ریزی؛ هر فاز روی پایه‌ی مستحکم فعلی سوار می‌شود.</p>
+
+  <div class="timeline">
+    <div class="tl">
+      <h4>فاز جاری <span class="pill p-ready">منتشرشده</span></h4>
+      <p>هسته‌ی عملیاتی کامل: نوبت‌دهی، پرونده، پنل بیمار و پرسنل، گزارش مالی، آپلود تصویر، یادآور پیامکی، امنیت نقش‌محور و استقرار بومی.</p>
+    </div>
+    <div class="tl">
+      <h4>فاز ۱ — مالی هوشمند <span class="pill p-dev">در حال توسعه</span></h4>
+      <p>اتصال درگاه پرداخت ایرانی، صدور فاکتور رسمی، و گزارش‌های تحلیلی نموداری برای درآمد و عملکرد.</p>
+    </div>
+    <div class="tl">
+      <h4>فاز ۲ — تجربه‌ی بیمار <span class="pill p-next">فاز بعد</span></h4>
+      <p>نسخه‌ی اپ موبایل (PWA)، دستیار هوشمند پاسخ‌گو، و باشگاه مشتریان با کمپین پیامکی هدفمند.</p>
+    </div>
+    <div class="tl">
+      <h4>فاز ۳ — عملیات و مقیاس <span class="pill p-next">فاز بعد</span></h4>
+      <p>بکاپ/بازیابی خودکار، لاگ ممیزی کامل، و مدیریت چندشعبه‌ای برای رشد کلینیک.</p>
+    </div>
+  </div>
+
+  <h3 style="margin:26px 0 8px;color:var(--navy);font-size:18px;">بسته‌های پیشنهادی</h3>
+  <p class="muted" style="font-size:13.5px;margin-bottom:6px">امکانات به‌صورت بسته‌بندی‌شده ارائه می‌شود؛ قیمت‌گذاری بر اساس توافق و دامنه‌ی استقرار.</p>
+  <div class="plans">
+    <div class="plan">
+      <div class="head">پایه</div>
+      <div class="price">بر اساس توافق</div>
+      <ul>
+        <li>نوبت‌دهی آنلاین</li>
+        <li>پنل بیمار</li>
+        <li>پرونده‌ی الکترونیک</li>
+        <li>اعلان پیامکی</li>
+        <li class="no">گزارش مالی پیشرفته</li>
+        <li class="no">پرداخت آنلاین</li>
+      </ul>
+    </div>
+    <div class="plan featured">
+      <div class="head">حرفه‌ای</div>
+      <div class="price">بر اساس توافق</div>
+      <ul>
+        <li>تمام امکانات پایه</li>
+        <li>مدیریت پزشکان و شیفت</li>
+        <li>گزارش مالی و بیماران ویژه</li>
+        <li>آپلود تصاویر پزشکی</li>
+        <li>یادآور خودکار نوبت</li>
+        <li class="no">مدیریت چندشعبه‌ای</li>
+      </ul>
+    </div>
+    <div class="plan">
+      <div class="head">کلینیک+</div>
+      <div class="price">بر اساس توافق</div>
+      <ul>
+        <li>تمام امکانات حرفه‌ای</li>
+        <li>پرداخت آنلاین و فاکتور</li>
+        <li>گزارش‌های تحلیلی نموداری</li>
+        <li>باشگاه مشتریان</li>
+        <li>بکاپ خودکار و لاگ ممیزی</li>
+        <li>مدیریت چندشعبه‌ای</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ADVANTAGES + TECH ============ -->
+<section class="page">
+  <div class="eyebrow">چرا کلینیک شاد</div>
+  <h2 class="sec-title">مزیت‌های کلیدی</h2>
+  <div class="rule"></div>
+
+  <div class="adv">
+    <div class="a"><h4>۱۰۰٪ بومی و مستقل از خارج</h4><p>میزبانی روی سرور داخل ایران؛ بدون وابستگی به سرویس‌های مسدودشدنی، با پایداری بالا.</p></div>
+    <div class="a"><h4>موبایل‌محور و فارسی</h4><p>طراحی‌شده برای موبایل؛ رابط کاملاً فارسی با تم روشن/تیره و تجربه‌ی روان.</p></div>
+    <div class="a"><h4>داده‌ی واقعی، نه دمو</h4><p>تمام بخش‌ها روی پایگاه‌داده‌ی واقعی کار می‌کنند و آماده‌ی بهره‌برداری‌اند.</p></div>
+    <div class="a"><h4>امن و نقش‌محور</h4><p>کنترل دقیق دسترسی؛ هر نقش فقط داده‌ی مجاز خود را می‌بیند و داده‌ی بیمار محافظت می‌شود.</p></div>
+    <div class="a"><h4>قابل توسعه و مقیاس‌پذیر</h4><p>معماری ماژولار؛ افزودن قابلیت جدید بدون بازنویسی، و آماده برای رشد چندشعبه‌ای.</p></div>
+    <div class="a"><h4>پایدار و آزموده</h4><p>پوشش با تست‌های خودکار و استقرار استاندارد با Docker برای کاهش خطا و توقف.</p></div>
+  </div>
+
+  <h3 style="margin:26px 0 8px;color:var(--navy);font-size:18px;">نگاه فنی (خلاصه)</h3>
+  <p class="muted" style="font-size:13.5px">پشته‌ی فناوری مدرن، استاندارد صنعتی و قابل‌نگه‌داری:</p>
+  <div class="stack">
+    <span>NestJS (API)</span><span>React + Vite (وب)</span><span>PostgreSQL</span><span>Redis</span>
+    <span>Docker / Compose</span><span>احراز هویت JWT</span><span>کنترل دسترسی نقش‌محور</span>
+    <span>پیامک Kavenegar</span><span>استقرار VPS ایران</span><span>تست خودکار (Vitest)</span>
+  </div>
+
+  <table style="margin-top:18px">
+    <thead><tr><th>لایه</th><th>فناوری</th><th>نقش</th></tr></thead>
+    <tbody>
+      <tr><td><b>رابط کاربری</b></td><td>React + Vite + TypeScript</td><td>وب اپلیکیشن موبایل‌محور فارسی</td></tr>
+      <tr><td><b>سرویس</b></td><td>NestJS + Prisma</td><td>منطق کسب‌وکار و APIهای امن</td></tr>
+      <tr><td><b>داده</b></td><td>PostgreSQL + Redis</td><td>پایگاه‌داده‌ی اصلی و صف یادآورها</td></tr>
+      <tr><td><b>استقرار</b></td><td>Docker روی VPS ایران</td><td>اجرای پایدار و مستقل از خارج</td></tr>
+    </tbody>
+  </table>
+
+  <div class="cover-foot" style="margin-top:30px;color:#94a3b8;border-color:var(--line)">
+    <div>سامانه‌ی مدیریت کلینیک شاد — کاتالوگ محصول</div>
+    <div>آماده‌ی نمایش و بهره‌برداری</div>
+  </div>
+</section>
+
+</body>
+</html>

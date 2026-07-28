@@ -1,0 +1,22 @@
+{
+  "name": "shad-clinic-suite",
+  "private": true,
+  "version": "1.0.0",
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -n api,web -c green,blue \"npm run dev -w @shad/api\" \"npm run dev -w @shad/web\"",
+    "build": "npm run build -w @shad/api && npm run build -w @shad/web",
+    "lint": "npm run lint -w @shad/api && npm run lint -w @shad/web",
+    "prisma:generate": "npm run prisma:generate -w @shad/api",
+    "prisma:migrate": "npm run prisma:migrate -w @shad/api",
+    "seed": "npm run seed -w @shad/api",
+    "docker:prod:build": "docker compose -f docker-compose.prod.yml build",
+    "docker:prod:up": "docker compose -f docker-compose.prod.yml up -d",
+    "docker:prod:down": "docker compose -f docker-compose.prod.yml down"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
