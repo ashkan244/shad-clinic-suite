@@ -11,6 +11,8 @@ import { AppModule } from './app.module.js';
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, { bufferLogs: true });
   app.useLogger(app.get(Logger));
+  // Behind nginx / Liara's proxy: use X-Forwarded-For so rate limits are per client, not per proxy.
+  app.set('trust proxy', 1);
   app.use(helmet({ crossOriginResourcePolicy: false }));
   // Serve uploaded files (medical-record images) at /uploads.
   app.useStaticAssets(join(process.cwd(), 'uploads'), { prefix: '/uploads/' });

@@ -56,7 +56,7 @@ model Patient {
   id                  String   @id @default(cuid())
   userId              String   @unique
   user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  nationalId          String?
+  nationalId          String?  @unique
   insurance           String?
   address             String?
   notes               String?

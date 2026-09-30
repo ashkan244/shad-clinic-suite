@@ -8,10 +8,8 @@ import {
   ChatCircleDots,
   CheckCircle,
   ClipboardText,
-  Clock,
   CreditCard,
   Crown,
-  CloudArrowUp,
   FloppyDisk,
   FolderOpen,
   House,
@@ -583,7 +581,7 @@ const blankRecord = {
 
 export function App() {
   const [active, setActive] = useState<SectionId>('overview');
-  const [summary, setSummary] = useState<DashboardSummary | null>(null);
+  const [, setSummary] = useState<DashboardSummary | null>(null);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [patients, setPatients] = useState<Patient[]>([]);
@@ -788,7 +786,7 @@ export function App() {
     } else if (active === 'reviews') {
       api.reviews().then((d) => setReviewsList(d as DoctorReview[])).catch(() => undefined);
     }
-  }, [active]);
+  }, [active, currentUser?.role]);
 
   const patchDoctor = async (id: string, data: Record<string, unknown>) => {
     try {
@@ -985,7 +983,7 @@ export function App() {
       setBusy(true);
       const result =
         authMode === 'patient-login'
-          ? await api.authPatientLogin(patientAuth)
+          ? await api.authPatientLogin({ nationalId: patientAuth.nationalId, password: patientAuth.password })
           : authMode === 'patient-register'
             ? await api.authPatientRegister(patientAuth)
             : await api.authStaffLogin(staffAuth);
@@ -1070,8 +1068,7 @@ export function App() {
         patientId: activePatientDetail.id,
         title: recordDraft.title,
         note: recordDraft.note,
-        images: recordImages,
-        createdByUserId: currentUser.id
+        images: recordImages
       });
       setRecordDraft(blankRecord);
       setRecordImages([]);
@@ -1102,15 +1099,16 @@ export function App() {
 
   const handleCreatePatient = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!newPatient.fullName.trim() || !newPatient.phone.trim()) {
-      setError('نام و شماره موبایل الزامی است.');
+    if (!newPatient.fullName.trim() || !newPatient.phone.trim() || !newPatient.nationalId.trim()) {
+      setError('نام، شماره موبایل و کد ملی الزامی است.');
       return;
     }
     try {
       setBusy(true);
-      await api.createPatient(newPatient);
+      const created = (await api.createPatient(newPatient)) as { tempPassword: string };
       setNewPatient({ fullName: '', phone: '', nationalId: '', insurance: '' });
       setNewPatientOpen(false);
+      window.alert(`بیمار ثبت شد.\nورود با کد ملی — رمز عبور موقت: ${created.tempPassword}\nاین رمز را به بیمار بدهید؛ دوباره نمایش داده نمی‌شود.`);
       await reload();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'ثبت بیمار ناموفق بود');
@@ -2326,7 +2324,7 @@ export function App() {
                   </button>
                 ) : (
                   <>
-                    <p className="formHint">کد ۵ رقمی به شماره‌ی ثبت‌شده‌ی شما پیامک شد.</p>
+                    <p className="formHint">کد ۶ رقمی به شماره‌ی ثبت‌شده‌ی شما پیامک شد.</p>
                     <input
                       placeholder="کد پیامکی"
                       value={otpCode}
@@ -2343,13 +2341,21 @@ export function App() {
                 {authMode !== 'staff-login' ? (
                   <>
                     {authMode === 'patient-register' ? (
+                      <input placeholder="نام و نام خانوادگی" value={patientAuth.fullName} onChange={(e) => setPatientAuth({ ...patientAuth, fullName: e.target.value })} />
+                    ) : null}
+                    <input
+                      placeholder="کد ملی"
+                      inputMode="numeric"
+                      maxLength={10}
+                      value={patientAuth.nationalId}
+                      onChange={(e) => setPatientAuth({ ...patientAuth, nationalId: e.target.value })}
+                    />
+                    {authMode === 'patient-register' ? (
                       <>
-                        <input placeholder="نام و نام خانوادگی" value={patientAuth.fullName} onChange={(e) => setPatientAuth({ ...patientAuth, fullName: e.target.value })} />
-                        <input placeholder="کد ملی" value={patientAuth.nationalId} onChange={(e) => setPatientAuth({ ...patientAuth, nationalId: e.target.value })} />
+                        <input placeholder="شماره موبایل" inputMode="tel" value={patientAuth.phone} onChange={(e) => setPatientAuth({ ...patientAuth, phone: e.target.value })} />
                         <input placeholder="بیمه" value={patientAuth.insurance} onChange={(e) => setPatientAuth({ ...patientAuth, insurance: e.target.value })} />
                       </>
                     ) : null}
-                    <input placeholder="شماره موبایل" value={patientAuth.phone} onChange={(e) => setPatientAuth({ ...patientAuth, phone: e.target.value })} />
                     <input placeholder="رمز عبور" type="password" value={patientAuth.password} onChange={(e) => setPatientAuth({ ...patientAuth, password: e.target.value })} />
                   </>
                 ) : (
@@ -2382,9 +2388,9 @@ export function App() {
             <form className="form" onSubmit={handleCreatePatient}>
               <input placeholder="نام و نام خانوادگی" value={newPatient.fullName} onChange={(e) => setNewPatient({ ...newPatient, fullName: e.target.value })} />
               <input placeholder="شماره موبایل" value={newPatient.phone} onChange={(e) => setNewPatient({ ...newPatient, phone: e.target.value })} />
-              <input placeholder="کد ملی (اختیاری)" value={newPatient.nationalId} onChange={(e) => setNewPatient({ ...newPatient, nationalId: e.target.value })} />
+              <input placeholder="کد ملی" inputMode="numeric" maxLength={10} value={newPatient.nationalId} onChange={(e) => setNewPatient({ ...newPatient, nationalId: e.target.value })} />
               <input placeholder="بیمه (اختیاری)" value={newPatient.insurance} onChange={(e) => setNewPatient({ ...newPatient, insurance: e.target.value })} />
-              <p className="formHint">رمز عبور اولیه = شماره موبایل. بیمار پس از ورود می‌تواند آن را تغییر دهد.</p>
+              <p className="formHint">بیمار با کد ملی وارد می‌شود. پس از ثبت، یک رمز موقت نمایش داده می‌شود که باید به بیمار بدهید.</p>
               <button className="actionBtn primary" type="submit">ثبت بیمار</button>
             </form>
           </div>

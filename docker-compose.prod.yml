@@ -4,7 +4,7 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: shad
-      POSTGRES_PASSWORD: shad
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
       POSTGRES_DB: shad_clinic
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -26,18 +26,14 @@ services:
       context: .
       dockerfile: Dockerfile.api
     restart: unless-stopped
+    # Secrets and provider settings come from .env (see .env.example); nothing sensitive lives here.
+    env_file: .env
     environment:
       NODE_ENV: production
       PORT: 4000
-      DATABASE_URL: postgresql://shad:shad@postgres:5432/shad_clinic?schema=public
-      JWT_SECRET: change-me-in-production
+      DATABASE_URL: postgresql://shad:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/shad_clinic?schema=public
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env}
       REDIS_URL: redis://redis:6379
-      SMS_PROVIDER: mock
-      SMS_API_KEY: ""
-      SMS_SENDER: ""
-      PAYMENT_PROVIDER: mock
-      ZARINPAL_MERCHANT_ID: ""
-      PAYMENT_CALLBACK_URL: ""
     volumes:
       - api_uploads:/app/uploads
     depends_on:

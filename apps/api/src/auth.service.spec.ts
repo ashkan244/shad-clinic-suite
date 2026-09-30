@@ -17,11 +17,29 @@ describe('AuthService.sanitizeUser', () => {
   });
 });
 
+const VALID_ID = '1741234565';
+
 describe('AuthService.registerPatient', () => {
+  it('rejects an invalid national ID', async () => {
+    await expect(
+      makeService({}).registerPatient({ fullName: 'A', phone: '09', nationalId: '1234567890', password: 'pass' })
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
   it('rejects an already-registered phone', async () => {
     const prisma = { user: { findUnique: vi.fn().mockResolvedValue({ id: 'exists' }) } };
     await expect(
-      makeService(prisma).registerPatient({ fullName: 'A', phone: '09', password: 'pass' })
+      makeService(prisma).registerPatient({ fullName: 'A', phone: '09', nationalId: VALID_ID, password: 'pass' })
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('rejects an already-registered national ID', async () => {
+    const prisma = {
+      user: { findUnique: vi.fn().mockResolvedValue(null) },
+      patient: { findUnique: vi.fn().mockResolvedValue({ id: 'p0' }) }
+    };
+    await expect(
+      makeService(prisma).registerPatient({ fullName: 'A', phone: '09', nationalId: VALID_ID, password: 'pass' })
     ).rejects.toBeInstanceOf(BadRequestException);
   });
 
@@ -35,9 +53,10 @@ describe('AuthService.registerPatient', () => {
       patient: { id: 'p1' }
     };
     const prisma = {
-      user: { findUnique: vi.fn().mockResolvedValue(null), create: vi.fn().mockResolvedValue(created) }
+      user: { findUnique: vi.fn().mockResolvedValue(null), create: vi.fn().mockResolvedValue(created) },
+      patient: { findUnique: vi.fn().mockResolvedValue(null) }
     };
-    const res = await makeService(prisma).registerPatient({ fullName: 'A', phone: '09', password: 'pass' });
+    const res = await makeService(prisma).registerPatient({ fullName: 'A', phone: '09', nationalId: VALID_ID, password: 'pass' });
     expect(res.accessToken).toBe('signed.jwt.token');
     expect(res.user).not.toHaveProperty('passwordHash');
   });
@@ -45,28 +64,66 @@ describe('AuthService.registerPatient', () => {
 
 describe('AuthService.loginPatient', () => {
   it('rejects unknown credentials', async () => {
-    const prisma = { user: { findUnique: vi.fn().mockResolvedValue(null) } };
+    const prisma = { patient: { findUnique: vi.fn().mockResolvedValue(null) } };
     await expect(
-      makeService(prisma).loginPatient({ phone: '09', password: 'x' })
+      makeService(prisma).loginPatient({ nationalId: VALID_ID, password: 'x' })
     ).rejects.toBeInstanceOf(UnauthorizedException);
   });
 
-  it('returns a token for valid credentials', async () => {
+  it('returns a token for valid national ID + password', async () => {
     const passwordHash = await bcrypt.hash('pass', 10);
-    const prisma = {
+    const findUnique = vi.fn().mockResolvedValue({
+      id: 'p1',
       user: {
-        findUnique: vi.fn().mockResolvedValue({
-          id: 'u1',
-          role: Role.PATIENT,
-          phone: '09',
-          fullName: 'A',
-          passwordHash,
-          patient: { id: 'p1' }
-        })
+        id: 'u1',
+        role: Role.PATIENT,
+        phone: '09',
+        fullName: 'A',
+        passwordHash,
+        patient: { id: 'p1' }
       }
-    };
-    const res = await makeService(prisma).loginPatient({ phone: '09', password: 'pass' });
+    });
+    const res = await makeService({ patient: { findUnique } }).loginPatient({ nationalId: VALID_ID, password: 'pass' });
+    expect(findUnique).toHaveBeenCalledWith(expect.objectContaining({ where: { nationalId: VALID_ID } }));
     expect(res.accessToken).toBe('signed.jwt.token');
     expect(res.user).not.toHaveProperty('passwordHash');
+  });
+});
+
+describe('AuthService national-ID OTP', () => {
+  const patientRow = { id: 'p1', userId: 'u1' };
+  const makeOtpService = () => {
+    const prisma = {
+      patient: { findUnique: vi.fn().mockResolvedValue(patientRow) },
+      user: { findUnique: vi.fn().mockResolvedValue({ id: 'u1', role: Role.PATIENT, phone: '09', fullName: 'A', passwordHash: 'h' }) }
+    };
+    notifications.notify.mockClear();
+    return makeService(prisma);
+  };
+  const sentCode = () => String(notifications.notify.mock.calls.at(-1)?.[0].body.match(/\d{6}/)?.[0]);
+
+  it('sends a 6-digit code and does not resend within the cooldown', async () => {
+    const svc = makeOtpService();
+    await svc.requestNationalIdOtp(VALID_ID);
+    await svc.requestNationalIdOtp(VALID_ID);
+    expect(notifications.notify).toHaveBeenCalledTimes(1);
+    expect(sentCode()).toMatch(/^\d{6}$/);
+  });
+
+  it('burns the code after too many wrong guesses', async () => {
+    const svc = makeOtpService();
+    await svc.requestNationalIdOtp(VALID_ID);
+    const code = sentCode();
+    for (let i = 0; i < 5; i++) {
+      await expect(svc.verifyNationalIdOtp(VALID_ID, 'wrong')).rejects.toBeInstanceOf(UnauthorizedException);
+    }
+    await expect(svc.verifyNationalIdOtp(VALID_ID, code)).rejects.toBeInstanceOf(UnauthorizedException);
+  });
+
+  it('signs in with the correct code', async () => {
+    const svc = makeOtpService();
+    await svc.requestNationalIdOtp(VALID_ID);
+    const res = await svc.verifyNationalIdOtp(VALID_ID, sentCode());
+    expect(res.accessToken).toBe('signed.jwt.token');
   });
 });

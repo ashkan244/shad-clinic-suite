@@ -1,19 +1,27 @@
 import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { Prisma, Role } from '@prisma/client';
+import { Role } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import { randomInt } from 'node:crypto';
 import { PrismaService } from './prisma.service.js';
 import { NotificationsService } from './notifications.service.js';
+import { isValidNationalId } from './national-id.js';
 
 type LoginInput = {
+  nationalId: string;
+  password: string;
+};
+
+type StaffLoginInput = {
   phone: string;
   password: string;
+  role: Role;
 };
 
 type RegisterInput = {
   fullName: string;
   phone: string;
-  nationalId?: string;
+  nationalId: string;
   insurance?: string;
   password: string;
 };
@@ -24,8 +32,12 @@ export class AuthService {
   // Node process (matches this codebase's "mock provider" dev-scale approach);
   // a multi-instance production deployment should move this to Redis (already
   // used for BullMQ) with the same TTL semantics.
-  private readonly otpStore = new Map<string, { code: string; userId: string; expiresAt: number }>();
+  private readonly otpStore = new Map<string, { code: string; userId: string; expiresAt: number; sentAt: number; attempts: number }>();
   private static readonly OTP_TTL_MS = 5 * 60 * 1000;
+  /** Minimum gap between two codes for the same national ID (stops SMS bombing). */
+  private static readonly OTP_RESEND_MS = 60 * 1000;
+  /** Wrong guesses allowed before the code is burned (stops brute force). */
+  private static readonly OTP_MAX_ATTEMPTS = 5;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -45,9 +57,16 @@ export class AuthService {
   }
 
   async registerPatient(input: RegisterInput) {
+    if (!isValidNationalId(input.nationalId)) {
+      throw new BadRequestException('کد ملی نامعتبر است.');
+    }
     const existing = await this.prisma.user.findUnique({ where: { phone: input.phone } });
     if (existing) {
       throw new BadRequestException('این شماره قبلاً ثبت شده است.');
+    }
+    const takenId = await this.prisma.patient.findUnique({ where: { nationalId: input.nationalId } });
+    if (takenId) {
+      throw new BadRequestException('این کد ملی قبلاً ثبت شده است.');
     }
 
     const user = await this.prisma.user.create({
@@ -83,12 +102,13 @@ export class AuthService {
   }
 
   async loginPatient(input: LoginInput) {
-    const user = await this.prisma.user.findUnique({
-      where: { phone: input.phone },
-      include: { patient: true, staffProfile: true }
+    const patient = await this.prisma.patient.findUnique({
+      where: { nationalId: input.nationalId },
+      include: { user: { include: { patient: true, staffProfile: true } } }
     });
+    const user = patient?.user;
     if (!user || !user.passwordHash || !(await bcrypt.compare(input.password, user.passwordHash))) {
-      throw new UnauthorizedException('شماره موبایل یا رمز عبور اشتباه است.');
+      throw new UnauthorizedException('کد ملی یا رمز عبور اشتباه است.');
     }
     return {
       ...this.sign(user),
@@ -96,7 +116,7 @@ export class AuthService {
     };
   }
 
-  async loginStaff(input: LoginInput & { role: Role }) {
+  async loginStaff(input: StaffLoginInput) {
     const user = await this.prisma.user.findUnique({
       where: { phone: input.phone },
       include: { staffProfile: true }
@@ -117,10 +137,12 @@ export class AuthService {
    * endpoint can't be used to enumerate registered national IDs.
    */
   async requestNationalIdOtp(nationalId: string) {
-    const patient = await this.prisma.patient.findFirst({ where: { nationalId } });
-    if (patient) {
-      const code = String(Math.floor(10000 + Math.random() * 90000));
-      this.otpStore.set(nationalId, { code, userId: patient.userId, expiresAt: Date.now() + AuthService.OTP_TTL_MS });
+    const patient = await this.prisma.patient.findUnique({ where: { nationalId } });
+    const pending = this.otpStore.get(nationalId);
+    if (patient && !(pending && Date.now() - pending.sentAt < AuthService.OTP_RESEND_MS)) {
+      const code = String(randomInt(100_000, 1_000_000));
+      const now = Date.now();
+      this.otpStore.set(nationalId, { code, userId: patient.userId, expiresAt: now + AuthService.OTP_TTL_MS, sentAt: now, attempts: 0 });
       this.notifications
         .notify({
           userId: patient.userId,
@@ -137,6 +159,7 @@ export class AuthService {
   async verifyNationalIdOtp(nationalId: string, code: string) {
     const entry = this.otpStore.get(nationalId);
     if (!entry || entry.expiresAt < Date.now() || entry.code !== code) {
+      if (entry && ++entry.attempts >= AuthService.OTP_MAX_ATTEMPTS) this.otpStore.delete(nationalId);
       throw new UnauthorizedException('کد وارد شده نامعتبر یا منقضی شده است.');
     }
     this.otpStore.delete(nationalId);

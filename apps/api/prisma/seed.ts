@@ -3,7 +3,33 @@ import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
+/**
+ * Demo data seed. Safety rails:
+ * - Refuses to run against a database that already has users (it WIPES every
+ *   table first), unless SEED_FORCE=1 is set explicitly.
+ * - Every seeded account gets SEED_PASSWORD. In production it is required;
+ *   in development it defaults to "1030".
+ */
+function seedPassword() {
+  const fromEnv = process.env.SEED_PASSWORD?.trim();
+  if (fromEnv) {
+    if (fromEnv.length < 8) throw new Error('SEED_PASSWORD must be at least 8 characters.');
+    return fromEnv;
+  }
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('Set SEED_PASSWORD before seeding a production database.');
+  }
+  return '1030';
+}
+
 async function main() {
+  const existingUsers = await prisma.user.count();
+  if (existingUsers > 0 && process.env.SEED_FORCE !== '1') {
+    console.log(`Database already has ${existingUsers} users — seed skipped (set SEED_FORCE=1 to wipe and reseed).`);
+    return;
+  }
+  const passwordHash = await bcrypt.hash(seedPassword(), 10);
+
   await prisma.auditLog.deleteMany();
   await prisma.notification.deleteMany();
   await prisma.fileAsset.deleteMany();
@@ -23,7 +49,7 @@ async function main() {
       role: Role.ADMIN,
       phone: '09120000000',
       fullName: 'مدیر کلینیک شاد',
-      passwordHash: await bcrypt.hash('1030', 10),
+      passwordHash,
       staffProfile: {
         create: {
           title: 'مدیریت',
@@ -43,7 +69,7 @@ async function main() {
       role: Role.DOCTOR,
       phone: '09123334444',
       fullName: 'دکتر نرگس صادقی',
-      passwordHash: await bcrypt.hash('1030', 10),
+      passwordHash,
       staffProfile: {
         create: {
           title: 'پزشک',
@@ -75,7 +101,7 @@ async function main() {
         role: Role.RECEPTION,
         phone: r.phone,
         fullName: r.fullName,
-        passwordHash: await bcrypt.hash('1030', 10),
+        passwordHash,
         staffProfile: {
           create: { title: 'پذیرش', service: 'general', shift: 'morning', active: true, rating: 5, gallery: [] }
         }
@@ -88,10 +114,10 @@ async function main() {
       role: Role.PATIENT,
       phone: '09122223333',
       fullName: 'عرفان کرطلائی',
-      passwordHash: await bcrypt.hash('1030', 10),
+      passwordHash,
       patient: {
         create: {
-          nationalId: '1741234567',
+          nationalId: '1741234565',
           insurance: 'تامین اجتماعی',
           address: 'اهواز، کیانپارس',
           wallet: 2500000,
@@ -167,6 +193,11 @@ async function main() {
   });
 }
 
-main().finally(async () => {
-  await prisma.$disconnect();
-});
+main()
+  .catch((err) => {
+    console.error(err);
+    process.exitCode = 1;
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });

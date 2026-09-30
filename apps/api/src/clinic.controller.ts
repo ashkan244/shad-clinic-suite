@@ -18,7 +18,8 @@ import {
   UseInterceptors
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { IsArray, IsBoolean, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+import { IsArray, IsBoolean, IsDateString, IsEnum, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { AppointmentStatus, Role } from '@prisma/client';
 import { JwtAuthGuard } from './jwt-auth.guard.js';
 import { RolesGuard } from './roles.guard.js';
@@ -26,6 +27,7 @@ import { Public, Roles, STAFF_ROLES } from './auth.decorators.js';
 import { ClinicService } from './clinic.service.js';
 import { PaymentService } from './payment.service.js';
 import { AuditService } from './audit.service.js';
+import { toDigits } from './national-id.js';
 
 type AuthedRequest = { user: { sub: string; role: Role } };
 
@@ -54,13 +56,11 @@ class CreateRecordDto {
   @IsOptional() @IsString() appointmentId?: string;
   @IsString() title!: string;
   @IsString() note!: string;
-  @IsOptional() @IsArray() images?: string[];
-  @IsString() createdByUserId!: string;
+  @IsOptional() @IsArray() @IsString({ each: true }) images?: string[];
 }
 
 class CreateTicketDto {
-  @IsString() senderUserId!: string;
-  @IsString() receiverRole!: Role;
+  @IsEnum(Role) receiverRole!: Role;
   @IsString() subject!: string;
   @IsString() text!: string;
 }
@@ -96,9 +96,25 @@ class UpdateDoctorDto {
 
 class CreatePatientDto {
   @IsString() fullName!: string;
-  @IsString() phone!: string;
-  @IsOptional() @IsString() nationalId?: string;
+  @Transform(toDigits) @IsString() phone!: string;
+  @Transform(toDigits) @IsString() nationalId!: string;
   @IsOptional() @IsString() insurance?: string;
+}
+
+/** Fields staff may edit on a patient. Wallet/ids are deliberately excluded. */
+class UpdatePatientDto {
+  @IsOptional() @IsString() insurance?: string;
+  @IsOptional() @IsString() address?: string;
+  @IsOptional() @IsString() notes?: string;
+  @IsOptional() @IsString() treatmentPlan?: string;
+  @IsOptional() @IsArray() @IsString({ each: true }) treatmentPlanImages?: string[];
+  @IsOptional() @IsDateString() nextAppointmentDate?: string;
+  @IsOptional() @IsBoolean() isPlanActive?: boolean;
+}
+
+class UpdateAppointmentStatusDto {
+  @IsEnum(AppointmentStatus) status!: AppointmentStatus;
+  @IsOptional() @IsString() cancelReason?: string;
 }
 
 class RequestPaymentDto {
@@ -151,7 +167,7 @@ export class ClinicController {
 
   @Patch('patients/:id')
   @Roles(...STAFF_ROLES)
-  async updatePatient(@Param('id') id: string, @Body() body: Record<string, unknown>, @Req() req: AuthedRequest) {
+  async updatePatient(@Param('id') id: string, @Body() body: UpdatePatientDto, @Req() req: AuthedRequest) {
     const updated = await this.clinic.updatePatient(id, body);
     await this.audit.log({ actorId: req.user.sub, actorRole: req.user.role, action: 'patient.update', entity: 'Patient', entityId: id });
     return updated;
@@ -193,6 +209,15 @@ export class ClinicController {
   @Patch('staff/doctors/:id')
   @Roles(...STAFF_ROLES)
   async updateDoctor(@Param('id') id: string, @Body() body: UpdateDoctorDto, @Req() req: AuthedRequest) {
+    // Doctors may only edit their own public bio/photo; active/shift/rating stay with admin & reception.
+    if (req.user.role === Role.DOCTOR) {
+      if ((await this.clinic.staffProfileUserId(id)) !== req.user.sub) {
+        throw new ForbiddenException('فقط می‌توانید پروفایل خودتان را ویرایش کنید.');
+      }
+      if (body.active !== undefined || body.shift !== undefined || body.rating !== undefined) {
+        throw new ForbiddenException('تغییر وضعیت، شیفت یا امتیاز فقط توسط مدیریت/پذیرش مجاز است.');
+      }
+    }
     const updated = await this.clinic.updateDoctor(id, body);
     await this.audit.log({ actorId: req.user.sub, actorRole: req.user.role, action: 'doctor.update', entity: 'StaffProfile', entityId: id, meta: body });
     return updated;
@@ -226,7 +251,7 @@ export class ClinicController {
   @Roles(...STAFF_ROLES)
   async updateAppointmentStatus(
     @Param('id') id: string,
-    @Body() body: { status: AppointmentStatus; cancelReason?: string },
+    @Body() body: UpdateAppointmentStatusDto,
     @Req() req: AuthedRequest
   ) {
     const updated = await this.clinic.updateAppointmentStatus(id, body.status, body.cancelReason);
@@ -266,7 +291,7 @@ export class ClinicController {
   @Post('records')
   @Roles(...STAFF_ROLES)
   async createRecord(@Body() body: CreateRecordDto, @Req() req: AuthedRequest) {
-    const record = await this.clinic.medicalRecordCreate(body);
+    const record = await this.clinic.medicalRecordCreate({ ...body, createdByUserId: req.user.sub });
     await this.audit.log({ actorId: req.user.sub, actorRole: req.user.role, action: 'record.create', entity: 'MedicalRecord', entityId: body.patientId, meta: { title: body.title } });
     return record;
   }
@@ -310,9 +335,13 @@ export class ClinicController {
     return this.clinic.createOrder(body.patientId, body.items);
   }
 
+  /** Records an in-person (cash/card) payment for an order. Staff only — patients pay via the gateway. */
   @Post('orders/:id/pay')
-  payOrder(@Param('id') id: string, @Body() body: PayOrderDto) {
-    return this.clinic.payOrder(id, body.method, body.reference);
+  @Roles(...STAFF_ROLES)
+  async payOrder(@Param('id') id: string, @Body() body: PayOrderDto, @Req() req: AuthedRequest) {
+    const payment = await this.clinic.payOrder(id, body.method, body.reference);
+    await this.audit.log({ actorId: req.user.sub, actorRole: req.user.role, action: 'order.pay', entity: 'Order', entityId: id, meta: { method: body.method } });
+    return payment;
   }
 
   @Post('payments/request')
@@ -383,10 +412,7 @@ export class ClinicController {
 
   @Post('tickets')
   createTicket(@Body() body: CreateTicketDto, @Req() req: AuthedRequest) {
-    // A patient can only send tickets as themselves.
-    if (req.user.role === Role.PATIENT && body.senderUserId !== req.user.sub) {
-      throw new ForbiddenException('ارسال‌کننده‌ی نامعتبر.');
-    }
-    return this.clinic.createTicket(body);
+    // The sender is always the signed-in user, never taken from the body.
+    return this.clinic.createTicket({ ...body, senderUserId: req.user.sub });
   }
 }

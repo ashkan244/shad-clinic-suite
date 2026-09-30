@@ -1,9 +1,11 @@
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { Appointment, AppointmentStatus, Role } from '@prisma/client';
+import { Appointment, AppointmentStatus, Prisma, Role } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import { randomInt } from 'node:crypto';
 import { PrismaService } from './prisma.service.js';
 import { NotificationsService } from './notifications.service.js';
 import { RemindersService } from './reminders.service.js';
+import { isValidNationalId } from './national-id.js';
 
 type CreateAppointmentInput = {
   patientId: string;
@@ -64,29 +66,34 @@ export class ClinicService {
     });
   }
 
-  async updatePatient(id: string, data: Record<string, unknown>) {
+  async updatePatient(id: string, data: Prisma.PatientUpdateInput) {
     return this.prisma.patient.update({ where: { id }, data });
   }
 
   /**
-   * Reception creates a patient (walk-in). Temp password = phone number so the
-   * patient can log in and change it later. Returns the created user (no hash).
+   * Reception creates a patient (walk-in). A random temporary password is
+   * returned once so reception can hand it over; the patient signs in with
+   * their national ID and can change it (or use the SMS code login) later.
    */
-  async createPatient(input: { fullName: string; phone: string; nationalId?: string; insurance?: string }) {
+  async createPatient(input: { fullName: string; phone: string; nationalId: string; insurance?: string }) {
+    if (!isValidNationalId(input.nationalId)) throw new BadRequestException('کد ملی نامعتبر است.');
     const existing = await this.prisma.user.findUnique({ where: { phone: input.phone } });
     if (existing) throw new BadRequestException('این شماره قبلاً ثبت شده است.');
+    const takenId = await this.prisma.patient.findUnique({ where: { nationalId: input.nationalId } });
+    if (takenId) throw new BadRequestException('این کد ملی قبلاً ثبت شده است.');
+    const tempPassword = String(randomInt(10_000_000, 100_000_000));
     const user = await this.prisma.user.create({
       data: {
         role: Role.PATIENT,
         phone: input.phone,
         fullName: input.fullName,
-        passwordHash: await bcrypt.hash(input.phone, 10),
+        passwordHash: await bcrypt.hash(tempPassword, 10),
         patient: { create: { nationalId: input.nationalId, insurance: input.insurance } }
       },
       include: { patient: true }
     });
     const { passwordHash: _omit, ...safe } = user;
-    return safe;
+    return { ...safe, tempPassword };
   }
 
   /** Returns the owning user id for a patient, or null. Used for ownership checks. */
@@ -391,6 +398,12 @@ export class ClinicService {
       orderBy: [{ service: 'asc' }, { rating: 'desc' }],
       include: { user: true }
     });
+  }
+
+  /** Owning user id of a staff profile, or null. Used for ownership checks. */
+  async staffProfileUserId(id: string) {
+    const profile = await this.prisma.staffProfile.findUnique({ where: { id }, select: { userId: true } });
+    return profile?.userId ?? null;
   }
 
   async updateDoctor(
