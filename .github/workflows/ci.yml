@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run prisma:generate
+      - name: Validate Prisma schema matches committed migrations
+        run: >
+          npx prisma migrate diff
+          --from-migrations apps/api/prisma/migrations
+          --to-schema-datamodel apps/api/prisma/schema.prisma
+          --shadow-database-url "postgresql://postgres:postgres@localhost:5432/shadow"
+          --exit-code
+      - run: npm run lint
+      - run: npm run typecheck -w @shad/web
+      - run: npm test -w @shad/api
+      - run: npm run build
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: shadow
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
