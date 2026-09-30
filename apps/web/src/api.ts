@@ -91,5 +91,7 @@ export const api = {
     request(`/appointments/${id}/pay`, { method: 'POST', body: JSON.stringify(body) }),
   serviceInvoice: (id: string) => request(`/appointments/${id}/invoice`),
   serviceHistory: (from: string, to: string) => request(`/service-history?from=${from}&to=${to}`),
-  doctorProfile: (id: string) => request(`/doctors/${id}/profile`)
+  doctorProfile: (id: string) => request(`/doctors/${id}/profile`),
+  assistantChat: (body: Record<string, unknown>) =>
+    request('/assistant/chat', { method: 'POST', body: JSON.stringify(body) })
 };

@@ -26,6 +26,7 @@ SMS_API_KEY=
 SMS_SENDER=
 PAYMENT_PROVIDER=mock
 ZARINPAL_MERCHANT_ID=
+ASSISTANT_PROVIDER=mock
 PAYMENT_CALLBACK_URL=${PUBLIC_URL}/payment/callback
 ENVEOF
   echo "wrote .env (keep it private; it is git-ignored)"

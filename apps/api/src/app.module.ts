@@ -19,6 +19,8 @@ import { SmsService } from './sms.service.js';
 import { NotificationsService } from './notifications.service.js';
 import { RemindersService, REMINDERS_QUEUE } from './reminders.service.js';
 import { RemindersProcessor } from './reminders.processor.js';
+import { AssistantController } from './assistant.controller.js';
+import { AssistantService } from './assistant.service.js';
 
 /**
  * JWT signing key. In production a real secret is mandatory — booting with the
@@ -62,7 +64,7 @@ function redisConnection() {
     BullModule.forRoot({ connection: redisConnection() }),
     BullModule.registerQueue({ name: REMINDERS_QUEUE })
   ],
-  controllers: [AppController, AuthController, ClinicController],
+  controllers: [AppController, AuthController, ClinicController, AssistantController],
   providers: [
     AppService,
     PrismaService,
@@ -75,7 +77,8 @@ function redisConnection() {
     SmsService,
     NotificationsService,
     RemindersService,
-    RemindersProcessor
+    RemindersProcessor,
+    AssistantService
   ]
 })
 export class AppModule {}

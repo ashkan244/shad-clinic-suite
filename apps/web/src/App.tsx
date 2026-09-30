@@ -30,6 +30,7 @@ import DatePicker from 'react-multi-date-picker';
 import persian from 'react-date-object/calendars/persian';
 import persian_fa from 'react-date-object/locales/persian_fa';
 import { api, mediaUrl } from './api';
+import { AssistantChat } from './AssistantChat';
 import type {
   Appointment,
   AuditEntry,
@@ -1923,6 +1924,8 @@ export function App() {
           </section>
         ) : null}
       </main>
+
+      {currentUser ? <AssistantChat /> : null}
 
       {menuOpen ? (
         <div className="drawerOverlay" onClick={() => setMenuOpen(false)}>
