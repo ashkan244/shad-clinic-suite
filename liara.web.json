@@ -1,0 +1,11 @@
+{
+  "platform": "docker",
+  "app": "shad-web",
+  "port": 80,
+  "build": {
+    "dockerfile": "Dockerfile.web"
+  },
+  "healthCheck": {
+    "command": "wget -q -O /dev/null http://127.0.0.1/"
+  }
+}

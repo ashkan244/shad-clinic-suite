@@ -1,0 +1,17 @@
+{
+  "platform": "docker",
+  "app": "shad-api",
+  "port": 4000,
+  "build": {
+    "dockerfile": "Dockerfile.api"
+  },
+  "disks": [
+    {
+      "name": "uploads",
+      "mountTo": "/app/uploads"
+    }
+  ],
+  "healthCheck": {
+    "command": "wget -q -O /dev/null http://127.0.0.1:4000/api/health"
+  }
+}

@@ -4,10 +4,13 @@ server {
   root /usr/share/nginx/html;
   index index.html;
 
+  # $proxy_host (the upstream's own host) is sent as Host so this also works when
+  # API_UPSTREAM is another hosted app routed by hostname (e.g. on Liara).
   location /api/ {
-    proxy_pass http://api:4000/api/;
+    proxy_pass ${API_UPSTREAM}/api/;
     proxy_http_version 1.1;
-    proxy_set_header Host $host;
+    proxy_ssl_server_name on;
+    proxy_set_header Host $proxy_host;
     proxy_set_header X-Real-IP $remote_addr;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header X-Forwarded-Proto $scheme;
@@ -16,9 +19,10 @@ server {
 
   # Uploaded medical-record images are served by the API.
   location /uploads/ {
-    proxy_pass http://api:4000/uploads/;
+    proxy_pass ${API_UPSTREAM}/uploads/;
     proxy_http_version 1.1;
-    proxy_set_header Host $host;
+    proxy_ssl_server_name on;
+    proxy_set_header Host $proxy_host;
     proxy_set_header X-Real-IP $remote_addr;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header X-Forwarded-Proto $scheme;

@@ -39,7 +39,8 @@ function redisConnection() {
     host: url.hostname,
     port: Number(url.port || 6379),
     ...(url.password ? { password: url.password } : {}),
-    ...(url.username ? { username: url.username } : {})
+    ...(url.username ? { username: url.username } : {}),
+    ...(url.protocol === 'rediss:' ? { tls: {} } : {})
   };
 }
 

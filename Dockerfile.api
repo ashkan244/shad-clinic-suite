@@ -3,6 +3,8 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 COPY apps/api/package.json apps/api/package.json
 COPY apps/web/package.json apps/web/package.json
+# Optional npm mirror for builds where registry.npmjs.org is unreachable (e.g. inside Iran).
+ARG NPM_CONFIG_REGISTRY=https://registry.npmjs.org/
 RUN npm ci
 
 FROM node:24-alpine AS builder

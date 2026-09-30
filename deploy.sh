@@ -31,6 +31,17 @@ ENVEOF
   echo "wrote .env (keep it private; it is git-ignored)"
 else
   echo ".env already exists, keeping it"
+  # Servers set up before secrets moved to .env: their Postgres volume was
+  # initialised with the old hardcoded password "shad", so reuse it.
+  if ! grep -q '^POSTGRES_PASSWORD=' .env; then
+    echo "POSTGRES_PASSWORD=shad" >> .env
+    echo "added POSTGRES_PASSWORD=shad (legacy volume password) to .env"
+  fi
+  if ! grep -qE '^JWT_SECRET=.{32,}' .env; then
+    sed -i '/^JWT_SECRET=/d' .env
+    echo "JWT_SECRET=$(openssl rand -hex 32)" >> .env
+    echo "generated a new JWT_SECRET (everyone must log in again)"
+  fi
 fi
 
 echo "== Building and starting containers =="
