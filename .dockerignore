@@ -6,4 +6,3 @@ coverage
 .env.*
 apps/*/node_modules
 apps/*/dist
-apps/api/prisma/migrations
